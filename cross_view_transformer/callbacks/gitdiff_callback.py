@@ -50,7 +50,7 @@ import os
 log = logging.getLogger(__name__)
 
 # 클론된 Git 저장소 경로 설정 (구글 코랩에서 클론한 경로)
-LOCAL_PATH = "/content/CoBEVT"  # 구글 코랩에서 클론한 경로
+LOCAL_PATH = "/content/cross_view_transformers"  # 구글 코랩에서 클론한 경로
 
 TEMPLATE = """
 ==================================================
