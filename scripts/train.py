@@ -97,7 +97,7 @@ import wandb
 
 log = logging.getLogger(__name__)
 
-CONFIG_PATH = '/content/CoBEVT/nuscenes/config'
+CONFIG_PATH = '/content/cross_view_transformers/config'
 CONFIG_NAME = 'config.yaml'
 
 
