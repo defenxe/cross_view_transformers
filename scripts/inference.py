@@ -14,7 +14,7 @@ from cross_view_transformer.common import setup_config, setup_experiment, load_b
 # =========================
 # 자동 최신 체크포인트 찾기
 # =========================
-def get_latest_ckpt(outputs_dir="/content/CoBEVT/outputs"):
+def get_latest_ckpt(outputs_dir="/content/cross_view_transformers/outputs"):
     ckpt_list = glob.glob(os.path.join(outputs_dir, "*/checkpoints/model.ckpt"))
     if not ckpt_list:
         raise FileNotFoundError(f"No checkpoint found in {outputs_dir}")
@@ -85,7 +85,7 @@ def run_inference(cfg, ckpt_path):
 # =========================
 # Hydra config 실행
 # =========================
-CONFIG_PATH = '/content/CoBEVT/nuscenes/config'
+CONFIG_PATH = '/content/cross_view_transformers/config'
 CONFIG_NAME = 'config.yaml'
 
 @hydra.main(config_path=CONFIG_PATH, config_name=CONFIG_NAME)
