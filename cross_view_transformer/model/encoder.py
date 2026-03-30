@@ -99,7 +99,11 @@ class BEVEmbedding(nn.Module):
 
         # map from bev coordinates to ego frame
         V = get_view_matrix(bev_height, bev_width, h_meters, w_meters, offset)  # 3 3
-        V_inv = torch.FloatTensor(V).inverse()                                  # 3 3
+        
+        #V_inv = torch.FloatTensor(V).inverse()                                  # 3 3
+        # 💡 [수정] 역행렬 연산은 반드시 float32에서 수행
+        V_inv = torch.tensor(V, dtype=torch.float32).inverse()
+        
         grid = V_inv @ rearrange(grid, 'd h w -> d (h w)')                      # 3 (h w)
         grid = rearrange(grid, 'd (h w) -> d h w', h=h, w=w)                    # 3 h w
 
@@ -245,17 +249,30 @@ class CrossViewAttention(nn.Module):
         c_flat = rearrange(c, 'b n ... -> (b n) ...')[..., None]                # (b n) 4 1 1
         c_embed = self.cam_embed(c_flat)                                        # (b n) d 1 1
 
-        pixel_flat = rearrange(pixel, '... h w -> ... (h w)')                   # 1 1 3 (h w)
+        # 💡 [핵심 수정] 좌표 투영(Geometry) 연산은 FP32에서 수행하여 정밀도 유지
+        # BF16은 정밀도가 낮아 투영 결과가 '지터링(Jittering)'처럼 흔들릴 수 있습니다.
+        pixel_flat = rearrange(pixel, '... h w -> ... (h w)').to(torch.float32)
+        #pixel_flat = rearrange(pixel, '... h w -> ... (h w)')                   # 1 1 3 (h w)
+        
         cam = I_inv @ pixel_flat                                                # b n 3 (h w)
         cam = F.pad(cam, (0, 0, 0, 1, 0, 0, 0, 0), value=1)                     # b n 4 (h w)
-        d = E_inv @ cam                                                         # b n 4 (h w)
-        d_flat = rearrange(d, 'b n d (h w) -> (b n) d h w', h=h, w=w)           # (b n) 4 h w
+
+
+        # 2. Embedding 계산을 위해 다시 원래의 dtype(bf16)으로 복구
+        dtype = feature.dtype 
+        d_flat = rearrange(d.to(dtype), 'b n d (h w) -> (b n) d h w', h=h, w=w)
+        #d = E_inv @ cam                                                         # b n 4 (h w)
+        #d_flat = rearrange(d, 'b n d (h w) -> (b n) d h w', h=h, w=w)           # (b n) 4 h w
+        
         d_embed = self.img_embed(d_flat)                                        # (b n) d h w
 
         img_embed = d_embed - c_embed                                           # (b n) d h w
         img_embed = img_embed / (img_embed.norm(dim=1, keepdim=True) + 1e-7)    # (b n) d h w
 
-        world = bev.grid[:2]                                                    # 2 H W
+        # BEV Grid 투영 (FP32 유지 권장)
+        world = bev.grid[:2].to(dtype)
+        #world = bev.grid[:2]    # 2 H W
+        
         w_embed = self.bev_embed(world[None])                                   # 1 d H W
         bev_embed = w_embed - c_embed                                           # (b n) d H W
         bev_embed = bev_embed / (bev_embed.norm(dim=1, keepdim=True) + 1e-7)    # (b n) d H W
@@ -320,8 +337,13 @@ class Encoder(nn.Module):
         b, n, _, _, _ = batch['image'].shape
 
         image = batch['image'].flatten(0, 1)            # b n c h w
-        I_inv = batch['intrinsics'].inverse()           # b n 3 3
-        E_inv = batch['extrinsics'].inverse()           # b n 4 4
+
+        # 💡 [핵심 수정] 역행렬은 CPU/GPU 상관없이 BF16을 지원하지 않는 경우가 많습니다.
+        # 강제로 FP32로 변환 후 역행렬 계산
+        I_inv = batch['intrinsics'].to(torch.float32).inverse()
+        E_inv = batch['extrinsics'].to(torch.float32).inverse()
+        #I_inv = batch['intrinsics'].inverse()           # b n 3 3
+        #E_inv = batch['extrinsics'].inverse()           # b n 4 4
 
         features = [self.down(y) for y in self.backbone(self.norm(image))]
 
