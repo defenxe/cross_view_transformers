@@ -109,7 +109,7 @@ class ModelModule(pl.LightningModule):
 
     def on_validation_start(self) -> None:
         self._log_epoch_metrics('train')
-        self._enable_dataloader_shuffle(self.trainer.val_dataloaders)
+        #self._enable_dataloader_shuffle(self.trainer.val_dataloaders)
 
     '''
     def validation_epoch_end(self, outputs):
