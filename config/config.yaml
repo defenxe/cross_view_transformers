@@ -18,10 +18,12 @@ experiment:
   log_image_interval: 500
 
 loader:
-  batch_size: 8 # 원래 4
-  num_workers: 8 # 원래 4
+  batch_size: 4 # 원래 4
+  num_workers: 4 # 원래 4
   pin_memory: True
-  prefetch_factor: 4
+  prefetch_factor: 2 #원래 4
+  persistent_workers: True # [추가] 에폭 사이 워커 재시작 시간을 줄여줍니다.
+  drop_last: True #추가 -> 마지막 짜투리 데이터 버리기
 
 # AdamW
 optimizer:
@@ -42,7 +44,7 @@ trainer:
   max_steps: 30001 #원래 30001
   log_every_n_steps: 50
 
-  gpus: -1
+  gpus: 1 # 원래 -1
   precision: 32 #원래 32
 
   accumulate_grad_batches: 2 #그라디언트 누적 추가했음
