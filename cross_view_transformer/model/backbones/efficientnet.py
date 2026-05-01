@@ -83,10 +83,13 @@ class EfficientNetExtractor(torch.nn.Module):
         result = []
 
         for layer in self.layers:
+            '''
             if self.training:
                 x = torch.utils.checkpoint.checkpoint(layer, x)
             else:
                 x = layer(x)
+            '''
+            x = layer(x)
 
             result.append(x)
 
