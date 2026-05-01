@@ -18,6 +18,9 @@ class ModelModule(pl.LightningModule):
         self.optimizer_args = optimizer_args
         self.scheduler_args = scheduler_args
 
+        self.validation_step_outputs = [] # 추론 시간 저장을 위한 리스트
+        self.inference_times = [] # 추론 시간 저장을 위한 리스트
+
     def forward(self, batch):
         return self.backbone(batch)
 
