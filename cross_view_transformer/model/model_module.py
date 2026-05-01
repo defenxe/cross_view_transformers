@@ -1,3 +1,5 @@
+'''
+
 import torch
 import pytorch_lightning as pl
 import time  # 시간 측정을 위해 추가
@@ -131,11 +133,15 @@ class ModelModule(pl.LightningModule):
             scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, **self.scheduler_args)
 
         return [optimizer], [{'scheduler': scheduler, 'interval': 'step'}]
+'''
+
+
+
 
 
 
 # gpu 추론시간이 아니라 end to end latency 측정 로
-'''
+
 import torch
 import pytorch_lightning as pl
 import time  # 시간 측정을 위해 추가
@@ -266,4 +272,4 @@ class ModelModule(pl.LightningModule):
 
         return [optimizer], [{'scheduler': scheduler, 'interval': 'step'}]
 
-'''
+
